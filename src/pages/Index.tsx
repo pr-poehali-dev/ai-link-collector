@@ -25,14 +25,54 @@ interface HistoryItem {
 }
 
 const videoStyles = [
-  { value: 'cinematic', label: 'Кинематографичный', description: 'Как в фильме, драматичный' },
-  { value: 'documentary', label: 'Документальный', description: 'Реалистичный, естественный' },
-  { value: 'dreamy', label: 'Сказочный', description: 'Мягкий, волшебный' },
-  { value: 'dynamic', label: 'Динамичный', description: 'Энергичный, быстрый' },
-  { value: 'nostalgic', label: 'Ностальгический', description: 'Ретро, винтажный' },
-  { value: 'modern', label: 'Современный', description: 'Чистый, минимализм' },
-  { value: 'artistic', label: 'Художественный', description: 'Креативный, арт-хаус' },
-  { value: 'commercial', label: 'Рекламный', description: 'Яркий, привлекательный' }
+  { 
+    value: 'cinematic', 
+    label: 'Кинематографичный', 
+    description: 'Как в фильме, драматичный',
+    example: 'Широкоэкранный формат, глубокие тени, контрастное освещение, плавные движения камеры'
+  },
+  { 
+    value: 'documentary', 
+    label: 'Документальный', 
+    description: 'Реалистичный, естественный',
+    example: 'Естественное освещение, живые моменты, минимум эффектов, аутентичность'
+  },
+  { 
+    value: 'dreamy', 
+    label: 'Сказочный', 
+    description: 'Мягкий, волшебный',
+    example: 'Мягкий фокус, световые блики, пастельные тона, эфирная атмосфера'
+  },
+  { 
+    value: 'dynamic', 
+    label: 'Динамичный', 
+    description: 'Энергичный, быстрый',
+    example: 'Быстрые переходы, резкие движения, высокая контрастность, яркие акценты'
+  },
+  { 
+    value: 'nostalgic', 
+    label: 'Ностальгический', 
+    description: 'Ретро, винтажный',
+    example: 'Зернистость плёнки, выцветшие цвета, старые фотоэффекты, тёплые оттенки'
+  },
+  { 
+    value: 'modern', 
+    label: 'Современный', 
+    description: 'Чистый, минимализм',
+    example: 'Простота линий, чёткие переходы, минимум эффектов, геометричность'
+  },
+  { 
+    value: 'artistic', 
+    label: 'Художественный', 
+    description: 'Креативный, арт-хаус',
+    example: 'Необычные ракурсы, абстракция, игра с цветом, экспериментальные эффекты'
+  },
+  { 
+    value: 'commercial', 
+    label: 'Рекламный', 
+    description: 'Яркий, привлекательный',
+    example: 'Насыщенные цвета, идеальная композиция, динамичный монтаж, глянец'
+  }
 ];
 
 const transitions = [
@@ -112,6 +152,8 @@ export default function Index() {
   const [finalPrompt, setFinalPrompt] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showStylePreview, setShowStylePreview] = useState(false);
+  const [previewStyle, setPreviewStyle] = useState<typeof videoStyles[0] | null>(null);
 
   useEffect(() => {
     const savedHistory = localStorage.getItem('videoPromptHistory');
@@ -277,20 +319,30 @@ export default function Index() {
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 {videoStyles.map(style => (
-                  <button
-                    key={style.value}
-                    onClick={() => updateParam('videoStyle', style.value)}
-                    className={`
-                      p-4 rounded-2xl text-left transition-all
-                      ${params.videoStyle === style.value
-                        ? 'neo-pressed bg-primary/10 border-2 border-primary'
-                        : 'neo-shadow hover:neo-inset'
-                      }
-                    `}
-                  >
-                    <div className="font-semibold text-foreground mb-1">{style.label}</div>
-                    <div className="text-xs text-muted-foreground">{style.description}</div>
-                  </button>
+                  <div key={style.value} className="relative">
+                    <button
+                      onClick={() => updateParam('videoStyle', style.value)}
+                      className={`
+                        w-full p-4 rounded-2xl text-left transition-all
+                        ${params.videoStyle === style.value
+                          ? 'neo-pressed bg-primary/10 border-2 border-primary'
+                          : 'neo-shadow hover:neo-inset'
+                        }
+                      `}
+                    >
+                      <div className="font-semibold text-foreground mb-1">{style.label}</div>
+                      <div className="text-xs text-muted-foreground">{style.description}</div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPreviewStyle(style);
+                        setShowStylePreview(true);
+                      }}
+                      className="absolute top-2 right-2 neo-shadow hover:neo-pressed rounded-lg p-1.5 transition-all bg-background"
+                    >
+                      <Icon name="Eye" size={14} className="text-primary" />
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -513,6 +565,133 @@ export default function Index() {
             </div>
           )}
         </div>
+
+        {showStylePreview && previewStyle && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={() => setShowStylePreview(false)}>
+            <div className="neo-shadow rounded-3xl p-8 max-w-2xl w-full bg-background" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-foreground flex items-center gap-3">
+                  <Icon name="Palette" size={28} className="text-primary" />
+                  {previewStyle.label}
+                </h2>
+                <button
+                  onClick={() => setShowStylePreview(false)}
+                  className="neo-shadow hover:neo-pressed rounded-xl p-2 transition-all"
+                >
+                  <Icon name="X" size={20} />
+                </button>
+              </div>
+
+              <div className="neo-inset rounded-2xl p-6 mb-6 bg-gradient-to-br from-primary/5 to-accent/5">
+                <div className="mb-4">
+                  <Badge variant="secondary" className="neo-shadow border-0 mb-3">
+                    Описание стиля
+                  </Badge>
+                  <p className="text-foreground text-lg">{previewStyle.description}</p>
+                </div>
+
+                <div>
+                  <Badge variant="secondary" className="neo-shadow border-0 mb-3">
+                    Характеристики
+                  </Badge>
+                  <p className="text-muted-foreground leading-relaxed">{previewStyle.example}</p>
+                </div>
+              </div>
+
+              <div className="neo-shadow rounded-2xl p-6 mb-6">
+                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Icon name="Lightbulb" size={20} />
+                  Когда использовать
+                </h3>
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  {previewStyle.value === 'cinematic' && (
+                    <>
+                      <p>• Свадебные видео и торжественные события</p>
+                      <p>• Путешествия и пейзажи</p>
+                      <p>• Истории с эмоциональным подтекстом</p>
+                      <p>• Профессиональные портфолио</p>
+                    </>
+                  )}
+                  {previewStyle.value === 'documentary' && (
+                    <>
+                      <p>• Репортажи и события</p>
+                      <p>• Семейные архивы</p>
+                      <p>• Образовательный контент</p>
+                      <p>• Повседневная жизнь</p>
+                    </>
+                  )}
+                  {previewStyle.value === 'dreamy' && (
+                    <>
+                      <p>• Романтические истории</p>
+                      <p>• Детские воспоминания</p>
+                      <p>• Сказочные события</p>
+                      <p>• Творческие проекты</p>
+                    </>
+                  )}
+                  {previewStyle.value === 'dynamic' && (
+                    <>
+                      <p>• Спортивные моменты</p>
+                      <p>• Активный отдых и приключения</p>
+                      <p>• Молодёжный контент</p>
+                      <p>• Музыкальные клипы</p>
+                    </>
+                  )}
+                  {previewStyle.value === 'nostalgic' && (
+                    <>
+                      <p>• Старые семейные фото</p>
+                      <p>• Воспоминания из прошлого</p>
+                      <p>• Ретро-тематика</p>
+                      <p>• Трогательные истории</p>
+                    </>
+                  )}
+                  {previewStyle.value === 'modern' && (
+                    <>
+                      <p>• Бизнес-презентации</p>
+                      <p>• Архитектура и дизайн</p>
+                      <p>• Технологии и инновации</p>
+                      <p>• Корпоративный контент</p>
+                    </>
+                  )}
+                  {previewStyle.value === 'artistic' && (
+                    <>
+                      <p>• Творческие эксперименты</p>
+                      <p>• Выставки и галереи</p>
+                      <p>• Авторские проекты</p>
+                      <p>• Концептуальные истории</p>
+                    </>
+                  )}
+                  {previewStyle.value === 'commercial' && (
+                    <>
+                      <p>• Продуктовые презентации</p>
+                      <p>• Рекламные ролики</p>
+                      <p>• Социальные сети</p>
+                      <p>• Промо-материалы</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    updateParam('videoStyle', previewStyle.value);
+                    setShowStylePreview(false);
+                  }}
+                  className="flex-1 neo-shadow hover:neo-pressed rounded-xl px-6 py-3 font-semibold text-primary transition-all flex items-center justify-center gap-2"
+                >
+                  <Icon name="Check" size={18} />
+                  Выбрать этот стиль
+                </button>
+                <button
+                  onClick={() => setShowStylePreview(false)}
+                  className="neo-shadow hover:neo-pressed rounded-xl px-6 py-3 font-medium text-foreground transition-all"
+                >
+                  Закрыть
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showHistory && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setShowHistory(false)}>
