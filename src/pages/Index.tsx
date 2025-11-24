@@ -1,205 +1,183 @@
 import { useState, useEffect } from 'react';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
 import Icon from '@/components/ui/icon';
 
-interface PromptTemplate {
-  id: string;
-  name: string;
-  category: 'creative' | 'business' | 'code' | 'analysis' | 'social';
-  description: string;
-  template: string;
-  icon: string;
-  variables: string[];
+interface VideoPromptParams {
+  photoDescription: string;
+  videoStyle: string;
+  duration: number;
+  transition: string;
+  movement: string;
+  atmosphere: string;
+  pace: string;
+  effects: string[];
+  music: string;
+  colorGrade: string;
 }
 
 interface HistoryItem {
   id: string;
   prompt: string;
   timestamp: number;
-  templateName?: string;
+  params: Partial<VideoPromptParams>;
 }
 
-const templates: PromptTemplate[] = [
-  {
-    id: '1',
-    name: 'Генерация контента',
-    category: 'creative',
-    description: 'Создание креативного текста на любую тему',
-    template: 'Напиши {length} текст на тему "{topic}" в стиле {style}. {additional}',
-    icon: 'PenTool',
-    variables: ['length', 'topic', 'style', 'additional']
-  },
-  {
-    id: '2',
-    name: 'Анализ текста',
-    category: 'analysis',
-    description: 'Глубокий анализ текста или документа',
-    template: 'Проанализируй следующий текст: "{text}". Обрати внимание на {focus}. {instruction}',
-    icon: 'Search',
-    variables: ['text', 'focus', 'instruction']
-  },
-  {
-    id: '3',
-    name: 'Написание кода',
-    category: 'code',
-    description: 'Генерация кода на любом языке',
-    template: 'Напиши код на {language} для {task}. Требования: {requirements}',
-    icon: 'Code',
-    variables: ['language', 'task', 'requirements']
-  },
-  {
-    id: '4',
-    name: 'Бизнес-план',
-    category: 'business',
-    description: 'Создание бизнес-планов и стратегий',
-    template: 'Составь {type} для {business}. Целевая аудитория: {audience}. Бюджет: {budget}',
-    icon: 'Briefcase',
-    variables: ['type', 'business', 'audience', 'budget']
-  },
-  {
-    id: '5',
-    name: 'Посты для соцсетей',
-    category: 'social',
-    description: 'Контент для социальных сетей',
-    template: 'Создай пост для {platform} про {topic}. Стиль: {tone}. Добавь {elements}',
-    icon: 'Share2',
-    variables: ['platform', 'topic', 'tone', 'elements']
-  },
-  {
-    id: '6',
-    name: 'Email-рассылка',
-    category: 'business',
-    description: 'Письма для email-маркетинга',
-    template: 'Напиши email для {purpose}. Тема письма: {subject}. Целевое действие: {cta}',
-    icon: 'Mail',
-    variables: ['purpose', 'subject', 'cta']
-  },
-  {
-    id: '7',
-    name: 'Идеи для контента',
-    category: 'creative',
-    description: 'Генерация идей и концепций',
-    template: 'Предложи {count} идей для {project}. Тематика: {theme}. {constraints}',
-    icon: 'Lightbulb',
-    variables: ['count', 'project', 'theme', 'constraints']
-  },
-  {
-    id: '8',
-    name: 'Исправление ошибок',
-    category: 'code',
-    description: 'Отладка и исправление кода',
-    template: 'Найди и исправь ошибки в этом коде: {code}. Язык: {language}. {context}',
-    icon: 'Bug',
-    variables: ['code', 'language', 'context']
-  },
-  {
-    id: '9',
-    name: 'Резюме документа',
-    category: 'analysis',
-    description: 'Краткое изложение длинных текстов',
-    template: 'Создай краткое резюме ({format}) для: {document}. Фокус на: {key_points}',
-    icon: 'FileText',
-    variables: ['format', 'document', 'key_points']
-  },
-  {
-    id: '10',
-    name: 'SEO-оптимизация',
-    category: 'business',
-    description: 'Тексты с учетом SEO',
-    template: 'Напиши SEO-оптимизированный текст про {topic}. Ключевые слова: {keywords}. Длина: {length}',
-    icon: 'TrendingUp',
-    variables: ['topic', 'keywords', 'length']
-  }
+const videoStyles = [
+  { value: 'cinematic', label: 'Кинематографичный', description: 'Как в фильме, драматичный' },
+  { value: 'documentary', label: 'Документальный', description: 'Реалистичный, естественный' },
+  { value: 'dreamy', label: 'Сказочный', description: 'Мягкий, волшебный' },
+  { value: 'dynamic', label: 'Динамичный', description: 'Энергичный, быстрый' },
+  { value: 'nostalgic', label: 'Ностальгический', description: 'Ретро, винтажный' },
+  { value: 'modern', label: 'Современный', description: 'Чистый, минимализм' },
+  { value: 'artistic', label: 'Художественный', description: 'Креативный, арт-хаус' },
+  { value: 'commercial', label: 'Рекламный', description: 'Яркий, привлекательный' }
 ];
 
-const categories = [
-  { id: 'all', name: 'Все', icon: 'LayoutGrid' },
-  { id: 'creative', name: 'Креатив', icon: 'Sparkles' },
-  { id: 'business', name: 'Бизнес', icon: 'Briefcase' },
-  { id: 'code', name: 'Код', icon: 'Code' },
-  { id: 'analysis', name: 'Анализ', icon: 'BarChart' },
-  { id: 'social', name: 'Соцсети', icon: 'MessageCircle' }
+const transitions = [
+  { value: 'smooth', label: 'Плавный', icon: 'Waves' },
+  { value: 'fade', label: 'Затухание', icon: 'Circle' },
+  { value: 'zoom', label: 'Зум', icon: 'ZoomIn' },
+  { value: 'slide', label: 'Скольжение', icon: 'MoveRight' },
+  { value: 'dissolve', label: 'Растворение', icon: 'Droplet' },
+  { value: 'cut', label: 'Резкий срез', icon: 'Scissors' },
+  { value: 'morph', label: 'Морфинг', icon: 'Blend' }
 ];
 
-const toneOptions = [
-  { value: 'professional', label: 'Профессиональный' },
-  { value: 'casual', label: 'Неформальный' },
-  { value: 'friendly', label: 'Дружелюбный' },
-  { value: 'humorous', label: 'С юмором' },
-  { value: 'serious', label: 'Серьёзный' }
+const movements = [
+  { value: 'static', label: 'Статично', description: 'Минимум движения' },
+  { value: 'slow_pan', label: 'Медленная панорама', description: 'Плавное движение камеры' },
+  { value: 'dolly', label: 'Приближение/отдаление', description: 'Движение вперёд-назад' },
+  { value: 'orbit', label: 'Облёт', description: 'Круговое движение' },
+  { value: 'parallax', label: 'Параллакс', description: '3D-эффект глубины' },
+  { value: 'tracking', label: 'Слежение', description: 'Следование за объектом' }
+];
+
+const atmospheres = [
+  { value: 'calm', label: 'Спокойная', color: 'bg-blue-500/20' },
+  { value: 'energetic', label: 'Энергичная', color: 'bg-orange-500/20' },
+  { value: 'mysterious', label: 'Таинственная', color: 'bg-purple-500/20' },
+  { value: 'joyful', label: 'Радостная', color: 'bg-yellow-500/20' },
+  { value: 'melancholic', label: 'Меланхоличная', color: 'bg-gray-500/20' },
+  { value: 'romantic', label: 'Романтичная', color: 'bg-pink-500/20' },
+  { value: 'epic', label: 'Эпичная', color: 'bg-red-500/20' },
+  { value: 'peaceful', label: 'Умиротворённая', color: 'bg-green-500/20' }
+];
+
+const paces = [
+  { value: 'very_slow', label: 'Очень медленно', speed: '0.5x' },
+  { value: 'slow', label: 'Медленно', speed: '0.75x' },
+  { value: 'normal', label: 'Нормально', speed: '1x' },
+  { value: 'fast', label: 'Быстро', speed: '1.5x' },
+  { value: 'very_fast', label: 'Очень быстро', speed: '2x' }
+];
+
+const effectsList = [
+  { value: 'particles', label: 'Частицы', icon: 'Sparkles' },
+  { value: 'light_leaks', label: 'Световые блики', icon: 'Sun' },
+  { value: 'blur', label: 'Размытие фона', icon: 'Blur' },
+  { value: 'vignette', label: 'Виньетка', icon: 'Circle' },
+  { value: 'grain', label: 'Зерно/шум', icon: 'Tv' },
+  { value: 'glitch', label: 'Глитч', icon: 'Zap' },
+  { value: 'glow', label: 'Свечение', icon: 'Lightbulb' },
+  { value: 'chromatic', label: 'Хроматическая аберрация', icon: 'Prism' }
+];
+
+const colorGrades = [
+  { value: 'natural', label: 'Естественная', description: 'Натуральные цвета' },
+  { value: 'warm', label: 'Тёплая', description: 'Оранжево-жёлтые тона' },
+  { value: 'cool', label: 'Холодная', description: 'Сине-зелёные тона' },
+  { value: 'vintage', label: 'Винтаж', description: 'Ретро, выцветшие цвета' },
+  { value: 'cinematic', label: 'Киношная', description: 'Контрастная, насыщенная' },
+  { value: 'bw', label: 'Чёрно-белая', description: 'Монохром' },
+  { value: 'pastel', label: 'Пастельная', description: 'Мягкие, нежные тона' },
+  { value: 'vibrant', label: 'Яркая', description: 'Насыщенные цвета' }
 ];
 
 export default function Index() {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null);
-  const [variables, setVariables] = useState<Record<string, string>>({});
-  const [customPrompt, setCustomPrompt] = useState('');
-  const [tone, setTone] = useState('professional');
-  const [language, setLanguage] = useState('русский');
+  const [params, setParams] = useState<VideoPromptParams>({
+    photoDescription: '',
+    videoStyle: 'cinematic',
+    duration: 10,
+    transition: 'smooth',
+    movement: 'slow_pan',
+    atmosphere: 'calm',
+    pace: 'normal',
+    effects: [],
+    music: '',
+    colorGrade: 'natural'
+  });
+
   const [finalPrompt, setFinalPrompt] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
-    const savedHistory = localStorage.getItem('promptHistory');
+    const savedHistory = localStorage.getItem('videoPromptHistory');
     if (savedHistory) {
       setHistory(JSON.parse(savedHistory));
     }
   }, []);
 
-  const saveToHistory = (prompt: string, templateName?: string) => {
+  const updateParam = <K extends keyof VideoPromptParams>(key: K, value: VideoPromptParams[K]) => {
+    setParams(prev => ({ ...prev, [key]: value }));
+  };
+
+  const toggleEffect = (effect: string) => {
+    setParams(prev => ({
+      ...prev,
+      effects: prev.effects.includes(effect)
+        ? prev.effects.filter(e => e !== effect)
+        : [...prev.effects, effect]
+    }));
+  };
+
+  const generatePrompt = () => {
+    const style = videoStyles.find(s => s.value === params.videoStyle)?.label || 'кинематографичный';
+    const trans = transitions.find(t => t.value === params.transition)?.label.toLowerCase() || 'плавный';
+    const move = movements.find(m => m.value === params.movement)?.label.toLowerCase() || 'медленная панорама';
+    const atm = atmospheres.find(a => a.value === params.atmosphere)?.label.toLowerCase() || 'спокойная';
+    const paceLabel = paces.find(p => p.value === params.pace)?.label.toLowerCase() || 'нормально';
+    const color = colorGrades.find(c => c.value === params.colorGrade)?.label.toLowerCase() || 'естественная';
+
+    let prompt = `Создай видео из фотографий с таким описанием: ${params.photoDescription || '[Опиши фотографии]'}.\n\n`;
+    
+    prompt += `СТИЛЬ: ${style}\n`;
+    prompt += `ДЛИТЕЛЬНОСТЬ: ${params.duration} секунд\n`;
+    prompt += `ПЕРЕХОДЫ: ${trans}\n`;
+    prompt += `ДВИЖЕНИЕ КАМЕРЫ: ${move}\n`;
+    prompt += `АТМОСФЕРА: ${atm}\n`;
+    prompt += `ТЕМП: ${paceLabel}\n`;
+    prompt += `ЦВЕТОКОРРЕКЦИЯ: ${color}\n`;
+
+    if (params.effects.length > 0) {
+      const effectLabels = params.effects.map(e => 
+        effectsList.find(ef => ef.value === e)?.label.toLowerCase()
+      ).join(', ');
+      prompt += `ЭФФЕКТЫ: ${effectLabels}\n`;
+    }
+
+    if (params.music) {
+      prompt += `МУЗЫКА: ${params.music}\n`;
+    }
+
+    prompt += `\nСделай видео плавным, профессиональным и визуально привлекательным.`;
+
+    setFinalPrompt(prompt);
+    saveToHistory(prompt, params);
+  };
+
+  const saveToHistory = (prompt: string, currentParams: VideoPromptParams) => {
     const newItem: HistoryItem = {
       id: Date.now().toString(),
       prompt,
       timestamp: Date.now(),
-      templateName
+      params: { ...currentParams }
     };
-    const newHistory = [newItem, ...history].slice(0, 20);
+    const newHistory = [newItem, ...history].slice(0, 15);
     setHistory(newHistory);
-    localStorage.setItem('promptHistory', JSON.stringify(newHistory));
-  };
-
-  const filteredTemplates = templates.filter(
-    template => selectedCategory === 'all' || template.category === selectedCategory
-  );
-
-  const handleTemplateSelect = (template: PromptTemplate) => {
-    setSelectedTemplate(template);
-    const newVars: Record<string, string> = {};
-    template.variables.forEach(v => {
-      newVars[v] = '';
-    });
-    setVariables(newVars);
-    setFinalPrompt('');
-  };
-
-  const handleVariableChange = (varName: string, value: string) => {
-    setVariables(prev => ({ ...prev, [varName]: value }));
-  };
-
-  const generatePrompt = () => {
-    let result = '';
-    let templateName: string | undefined;
-
-    if (selectedTemplate) {
-      result = selectedTemplate.template;
-      Object.entries(variables).forEach(([key, value]) => {
-        result = result.replace(`{${key}}`, value || `[${key}]`);
-      });
-      templateName = selectedTemplate.name;
-    } else if (customPrompt) {
-      result = customPrompt;
-      templateName = 'Свой промпт';
-    }
-
-    if (result) {
-      const prefix = `Ты - Grok, AI-ассистент. Тон: ${toneOptions.find(t => t.value === tone)?.label}. Язык ответа: ${language}.\n\n`;
-      const fullPrompt = prefix + result;
-      setFinalPrompt(fullPrompt);
-      saveToHistory(fullPrompt, templateName);
-    }
+    localStorage.setItem('videoPromptHistory', JSON.stringify(newHistory));
   };
 
   const copyToClipboard = (text?: string) => {
@@ -207,6 +185,9 @@ export default function Index() {
   };
 
   const loadFromHistory = (item: HistoryItem) => {
+    if (item.params) {
+      setParams(item.params as VideoPromptParams);
+    }
     setFinalPrompt(item.prompt);
     setShowHistory(false);
   };
@@ -214,18 +195,27 @@ export default function Index() {
   const deleteHistoryItem = (id: string) => {
     const newHistory = history.filter(item => item.id !== id);
     setHistory(newHistory);
-    localStorage.setItem('promptHistory', JSON.stringify(newHistory));
+    localStorage.setItem('videoPromptHistory', JSON.stringify(newHistory));
   };
 
   const clearHistory = () => {
     setHistory([]);
-    localStorage.removeItem('promptHistory');
+    localStorage.removeItem('videoPromptHistory');
   };
 
-  const clearAll = () => {
-    setSelectedTemplate(null);
-    setVariables({});
-    setCustomPrompt('');
+  const resetParams = () => {
+    setParams({
+      photoDescription: '',
+      videoStyle: 'cinematic',
+      duration: 10,
+      transition: 'smooth',
+      movement: 'slow_pan',
+      atmosphere: 'calm',
+      pace: 'normal',
+      effects: [],
+      music: '',
+      colorGrade: 'natural'
+    });
     setFinalPrompt('');
   };
 
@@ -234,194 +224,299 @@ export default function Index() {
       <div className="max-w-7xl mx-auto">
         <header className="mb-10 text-center">
           <div className="inline-block neo-shadow rounded-3xl px-8 py-6 mb-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2">
-              Конструктор промптов для Grok 🤖
+            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-2">
+              Grok: Видео из Фото 🎬
             </h1>
             <p className="text-muted-foreground text-lg">
-              Создавай идеальные промпты за минуту
+              Создай промпт для генерации видео из фотографий
             </p>
           </div>
         </header>
 
-        <div className="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="neo-shadow rounded-2xl p-4">
-            <label className="text-sm font-medium text-foreground mb-2 block">Тон общения</label>
-            <select
-              value={tone}
-              onChange={(e) => setTone(e.target.value)}
-              className="w-full neo-inset border-0 bg-transparent text-foreground px-4 py-3 rounded-xl focus:outline-none"
-            >
-              {toneOptions.map(option => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="neo-shadow rounded-2xl p-4">
-            <label className="text-sm font-medium text-foreground mb-2 block">Язык ответа</label>
-            <Input
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              placeholder="Например: русский"
-              className="neo-inset border-0 bg-transparent"
-            />
-          </div>
-
-          <div className="neo-shadow rounded-2xl p-4 flex items-end gap-2">
-            <button
-              onClick={clearAll}
-              className="flex-1 neo-shadow hover:neo-pressed rounded-xl px-4 py-3 font-medium text-foreground transition-all flex items-center justify-center gap-2"
-            >
-              <Icon name="RotateCcw" size={18} />
-              Сбросить
-            </button>
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className="flex-1 neo-shadow hover:neo-pressed rounded-xl px-4 py-3 font-medium text-primary transition-all flex items-center justify-center gap-2 relative"
-            >
-              <Icon name="History" size={18} />
-              История
-              {history.length > 0 && (
-                <Badge className="absolute -top-2 -right-2 neo-shadow bg-primary text-primary-foreground border-0 h-6 w-6 flex items-center justify-center p-0">
-                  {history.length}
-                </Badge>
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-8">
-          <div className="flex flex-wrap gap-3 justify-center">
-            {categories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`
-                  px-5 py-2.5 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2
-                  ${selectedCategory === category.id
-                    ? 'neo-pressed bg-primary/10 text-primary'
-                    : 'neo-shadow hover:neo-inset text-foreground'
-                  }
-                `}
-              >
-                <Icon name={category.icon} size={16} />
-                {category.name}
-              </button>
-            ))}
-          </div>
+        <div className="mb-6 flex gap-4 justify-center">
+          <button
+            onClick={resetParams}
+            className="neo-shadow hover:neo-pressed rounded-xl px-6 py-3 font-medium text-foreground transition-all flex items-center gap-2"
+          >
+            <Icon name="RotateCcw" size={18} />
+            Сбросить
+          </button>
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="neo-shadow hover:neo-pressed rounded-xl px-6 py-3 font-medium text-primary transition-all flex items-center gap-2 relative"
+          >
+            <Icon name="History" size={18} />
+            История
+            {history.length > 0 && (
+              <Badge className="absolute -top-2 -right-2 neo-shadow bg-primary text-primary-foreground border-0 h-6 w-6 flex items-center justify-center p-0">
+                {history.length}
+              </Badge>
+            )}
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div>
-            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Icon name="Layers" size={24} />
-              Шаблоны промптов
-            </h2>
-            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-              {filteredTemplates.map(template => (
-                <button
-                  key={template.id}
-                  onClick={() => handleTemplateSelect(template)}
-                  className={`
-                    w-full text-left neo-shadow rounded-2xl p-4 transition-all duration-200 hover:scale-[1.02]
-                    ${selectedTemplate?.id === template.id ? 'neo-pressed bg-primary/5' : ''}
-                  `}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="neo-shadow rounded-xl p-2 bg-gradient-to-br from-primary/20 to-accent/20 shrink-0">
-                      <Icon name={template.icon} size={20} className="text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground mb-1">{template.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">{template.description}</p>
-                      <Badge variant="secondary" className="mt-2 neo-inset border-0 text-xs">
-                        {categories.find(c => c.id === template.category)?.name}
-                      </Badge>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Icon name="Settings" size={24} />
-              Настройки промпта
-            </h2>
-            
-            {selectedTemplate && (
-              <div className="neo-shadow rounded-2xl p-6 mb-4">
-                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Icon name={selectedTemplate.icon} size={18} />
-                  {selectedTemplate.name}
-                </h3>
-                <div className="space-y-4">
-                  {selectedTemplate.variables.map(varName => (
-                    <div key={varName}>
-                      <label className="text-sm font-medium text-foreground mb-2 block capitalize">
-                        {varName.replace('_', ' ')}
-                      </label>
-                      <Input
-                        value={variables[varName] || ''}
-                        onChange={(e) => handleVariableChange(varName, e.target.value)}
-                        placeholder={`Введите ${varName}...`}
-                        className="neo-inset border-0 bg-transparent"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="neo-shadow rounded-2xl p-6 mb-4">
-              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Icon name="Edit" size={18} />
-                Или создай свой промпт
-              </h3>
-              <Textarea
-                value={customPrompt}
-                onChange={(e) => setCustomPrompt(e.target.value)}
-                placeholder="Напиши здесь свой собственный промпт..."
-                className="neo-inset border-0 bg-transparent min-h-[120px] resize-none"
+          <div className="space-y-6">
+            <div className="neo-shadow rounded-3xl p-6">
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Icon name="Image" size={24} />
+                Описание фотографий
+              </h2>
+              <Input
+                value={params.photoDescription}
+                onChange={(e) => updateParam('photoDescription', e.target.value)}
+                placeholder="Опиши, что на фотографиях: пейзажи, люди, события..."
+                className="neo-inset border-0 bg-transparent h-12"
               />
             </div>
 
-            <button
-              onClick={generatePrompt}
-              disabled={!selectedTemplate && !customPrompt}
-              className="w-full neo-shadow hover:neo-pressed rounded-2xl px-6 py-4 font-bold text-lg text-primary transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
-            >
-              <Icon name="Sparkles" size={22} />
-              Сгенерировать промпт
-            </button>
-
-            {finalPrompt && (
-              <div className="neo-shadow rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-foreground flex items-center gap-2">
-                    <Icon name="Check" size={18} className="text-green-500" />
-                    Готовый промпт
-                  </h3>
+            <div className="neo-shadow rounded-3xl p-6">
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Icon name="Palette" size={24} />
+                Стиль видео
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {videoStyles.map(style => (
                   <button
-                    onClick={copyToClipboard}
-                    className="neo-shadow hover:neo-pressed rounded-xl px-4 py-2 text-sm font-medium text-primary transition-all flex items-center gap-2"
+                    key={style.value}
+                    onClick={() => updateParam('videoStyle', style.value)}
+                    className={`
+                      p-4 rounded-2xl text-left transition-all
+                      ${params.videoStyle === style.value
+                        ? 'neo-pressed bg-primary/10 border-2 border-primary'
+                        : 'neo-shadow hover:neo-inset'
+                      }
+                    `}
                   >
-                    <Icon name="Copy" size={16} />
-                    Копировать
+                    <div className="font-semibold text-foreground mb-1">{style.label}</div>
+                    <div className="text-xs text-muted-foreground">{style.description}</div>
                   </button>
-                </div>
-                <div className="neo-inset rounded-xl p-4 bg-gradient-to-br from-primary/5 to-accent/5">
-                  <pre className="text-sm text-foreground whitespace-pre-wrap font-mono">{finalPrompt}</pre>
-                </div>
+                ))}
               </div>
-            )}
+            </div>
+
+            <div className="neo-shadow rounded-3xl p-6">
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Icon name="Clock" size={24} />
+                Длительность: {params.duration} сек
+              </h2>
+              <Slider
+                value={[params.duration]}
+                onValueChange={(value) => updateParam('duration', value[0])}
+                min={3}
+                max={60}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                <span>3 сек</span>
+                <span>60 сек</span>
+              </div>
+            </div>
+
+            <div className="neo-shadow rounded-3xl p-6">
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Icon name="Film" size={24} />
+                Переходы
+              </h2>
+              <div className="grid grid-cols-3 gap-3">
+                {transitions.map(trans => (
+                  <button
+                    key={trans.value}
+                    onClick={() => updateParam('transition', trans.value)}
+                    className={`
+                      p-3 rounded-xl flex flex-col items-center gap-2 transition-all
+                      ${params.transition === trans.value
+                        ? 'neo-pressed bg-primary/10 text-primary'
+                        : 'neo-shadow hover:neo-inset text-foreground'
+                      }
+                    `}
+                  >
+                    <Icon name={trans.icon} size={20} />
+                    <span className="text-xs font-medium">{trans.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="neo-shadow rounded-3xl p-6">
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Icon name="Move" size={24} />
+                Движение камеры
+              </h2>
+              <div className="space-y-2">
+                {movements.map(move => (
+                  <button
+                    key={move.value}
+                    onClick={() => updateParam('movement', move.value)}
+                    className={`
+                      w-full p-4 rounded-xl text-left transition-all
+                      ${params.movement === move.value
+                        ? 'neo-pressed bg-primary/10 border-2 border-primary'
+                        : 'neo-shadow hover:neo-inset'
+                      }
+                    `}
+                  >
+                    <div className="font-semibold text-foreground">{move.label}</div>
+                    <div className="text-xs text-muted-foreground">{move.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
+
+          <div className="space-y-6">
+            <div className="neo-shadow rounded-3xl p-6">
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Icon name="Wind" size={24} />
+                Атмосфера
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {atmospheres.map(atm => (
+                  <button
+                    key={atm.value}
+                    onClick={() => updateParam('atmosphere', atm.value)}
+                    className={`
+                      p-4 rounded-xl font-medium transition-all
+                      ${params.atmosphere === atm.value
+                        ? `neo-pressed ${atm.color} border-2 border-primary text-primary`
+                        : 'neo-shadow hover:neo-inset text-foreground'
+                      }
+                    `}
+                  >
+                    {atm.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="neo-shadow rounded-3xl p-6">
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Icon name="Gauge" size={24} />
+                Темп
+              </h2>
+              <div className="space-y-2">
+                {paces.map(pace => (
+                  <button
+                    key={pace.value}
+                    onClick={() => updateParam('pace', pace.value)}
+                    className={`
+                      w-full p-3 rounded-xl flex items-center justify-between transition-all
+                      ${params.pace === pace.value
+                        ? 'neo-pressed bg-primary/10 text-primary'
+                        : 'neo-shadow hover:neo-inset text-foreground'
+                      }
+                    `}
+                  >
+                    <span className="font-medium">{pace.label}</span>
+                    <Badge variant="secondary" className="neo-inset border-0 text-xs">
+                      {pace.speed}
+                    </Badge>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="neo-shadow rounded-3xl p-6">
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Icon name="Sparkles" size={24} />
+                Эффекты
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {effectsList.map(effect => (
+                  <button
+                    key={effect.value}
+                    onClick={() => toggleEffect(effect.value)}
+                    className={`
+                      p-3 rounded-xl flex items-center gap-2 transition-all
+                      ${params.effects.includes(effect.value)
+                        ? 'neo-pressed bg-primary/10 text-primary'
+                        : 'neo-shadow hover:neo-inset text-foreground'
+                      }
+                    `}
+                  >
+                    <Icon name={effect.icon} size={18} />
+                    <span className="text-sm font-medium">{effect.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="neo-shadow rounded-3xl p-6">
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Icon name="Droplet" size={24} />
+                Цветокоррекция
+              </h2>
+              <div className="space-y-2">
+                {colorGrades.map(color => (
+                  <button
+                    key={color.value}
+                    onClick={() => updateParam('colorGrade', color.value)}
+                    className={`
+                      w-full p-4 rounded-xl text-left transition-all
+                      ${params.colorGrade === color.value
+                        ? 'neo-pressed bg-primary/10 border-2 border-primary'
+                        : 'neo-shadow hover:neo-inset'
+                      }
+                    `}
+                  >
+                    <div className="font-semibold text-foreground">{color.label}</div>
+                    <div className="text-xs text-muted-foreground">{color.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="neo-shadow rounded-3xl p-6">
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Icon name="Music" size={24} />
+                Музыкальное сопровождение
+              </h2>
+              <Input
+                value={params.music}
+                onChange={(e) => updateParam('music', e.target.value)}
+                placeholder="Например: спокойная фоновая музыка, эпичный саундтрек..."
+                className="neo-inset border-0 bg-transparent h-12"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="neo-shadow rounded-3xl p-8 mb-6">
+          <button
+            onClick={generatePrompt}
+            disabled={!params.photoDescription}
+            className="w-full neo-shadow hover:neo-pressed rounded-2xl px-8 py-6 font-bold text-2xl text-primary transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed mb-6"
+          >
+            <Icon name="Sparkles" size={28} />
+            Сгенерировать промпт
+          </button>
+
+          {finalPrompt && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-foreground flex items-center gap-2 text-lg">
+                  <Icon name="Check" size={20} className="text-green-500" />
+                  Готовый промпт для Grok
+                </h3>
+                <button
+                  onClick={() => copyToClipboard()}
+                  className="neo-shadow hover:neo-pressed rounded-xl px-5 py-3 font-medium text-primary transition-all flex items-center gap-2"
+                >
+                  <Icon name="Copy" size={18} />
+                  Копировать
+                </button>
+              </div>
+              <div className="neo-inset rounded-2xl p-6 bg-gradient-to-br from-primary/5 to-accent/5">
+                <pre className="text-sm text-foreground whitespace-pre-wrap font-mono leading-relaxed">{finalPrompt}</pre>
+              </div>
+            </div>
+          )}
         </div>
 
         {showHistory && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setShowHistory(false)}>
-            <div className="neo-shadow rounded-3xl p-6 max-w-3xl w-full max-h-[80vh] overflow-hidden bg-background" onClick={(e) => e.stopPropagation()}>
+            <div className="neo-shadow rounded-3xl p-6 max-w-4xl w-full max-h-[80vh] overflow-hidden bg-background" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
                   <Icon name="History" size={28} />
@@ -455,13 +550,11 @@ export default function Index() {
                 <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-2">
                   {history.map((item) => (
                     <div key={item.id} className="neo-shadow rounded-2xl p-4 hover:scale-[1.01] transition-all">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {item.templateName && (
-                            <Badge variant="secondary" className="neo-inset border-0 text-xs">
-                              {item.templateName}
-                            </Badge>
-                          )}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="secondary" className="neo-inset border-0 text-xs">
+                            {videoStyles.find(s => s.value === item.params.videoStyle)?.label || 'Видео'}
+                          </Badge>
                           <span className="text-xs text-muted-foreground">
                             {new Date(item.timestamp).toLocaleString('ru-RU', {
                               day: '2-digit',
