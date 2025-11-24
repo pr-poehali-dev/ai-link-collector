@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,13 @@ interface PromptTemplate {
   template: string;
   icon: string;
   variables: string[];
+}
+
+interface HistoryItem {
+  id: string;
+  prompt: string;
+  timestamp: number;
+  templateName?: string;
 }
 
 const templates: PromptTemplate[] = [
@@ -132,6 +139,27 @@ export default function Index() {
   const [tone, setTone] = useState('professional');
   const [language, setLanguage] = useState('русский');
   const [finalPrompt, setFinalPrompt] = useState('');
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('promptHistory');
+    if (savedHistory) {
+      setHistory(JSON.parse(savedHistory));
+    }
+  }, []);
+
+  const saveToHistory = (prompt: string, templateName?: string) => {
+    const newItem: HistoryItem = {
+      id: Date.now().toString(),
+      prompt,
+      timestamp: Date.now(),
+      templateName
+    };
+    const newHistory = [newItem, ...history].slice(0, 20);
+    setHistory(newHistory);
+    localStorage.setItem('promptHistory', JSON.stringify(newHistory));
+  };
 
   const filteredTemplates = templates.filter(
     template => selectedCategory === 'all' || template.category === selectedCategory
@@ -152,22 +180,46 @@ export default function Index() {
   };
 
   const generatePrompt = () => {
+    let result = '';
+    let templateName: string | undefined;
+
     if (selectedTemplate) {
-      let result = selectedTemplate.template;
+      result = selectedTemplate.template;
       Object.entries(variables).forEach(([key, value]) => {
         result = result.replace(`{${key}}`, value || `[${key}]`);
       });
-      
-      const prefix = `Ты - Grok, AI-ассистент. Тон: ${toneOptions.find(t => t.value === tone)?.label}. Язык ответа: ${language}.\n\n`;
-      setFinalPrompt(prefix + result);
+      templateName = selectedTemplate.name;
     } else if (customPrompt) {
+      result = customPrompt;
+      templateName = 'Свой промпт';
+    }
+
+    if (result) {
       const prefix = `Ты - Grok, AI-ассистент. Тон: ${toneOptions.find(t => t.value === tone)?.label}. Язык ответа: ${language}.\n\n`;
-      setFinalPrompt(prefix + customPrompt);
+      const fullPrompt = prefix + result;
+      setFinalPrompt(fullPrompt);
+      saveToHistory(fullPrompt, templateName);
     }
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(finalPrompt);
+  const copyToClipboard = (text?: string) => {
+    navigator.clipboard.writeText(text || finalPrompt);
+  };
+
+  const loadFromHistory = (item: HistoryItem) => {
+    setFinalPrompt(item.prompt);
+    setShowHistory(false);
+  };
+
+  const deleteHistoryItem = (id: string) => {
+    const newHistory = history.filter(item => item.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem('promptHistory', JSON.stringify(newHistory));
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    localStorage.removeItem('promptHistory');
   };
 
   const clearAll = () => {
@@ -215,13 +267,25 @@ export default function Index() {
             />
           </div>
 
-          <div className="neo-shadow rounded-2xl p-4 flex items-end">
+          <div className="neo-shadow rounded-2xl p-4 flex items-end gap-2">
             <button
               onClick={clearAll}
-              className="w-full neo-shadow hover:neo-pressed rounded-xl px-4 py-3 font-medium text-foreground transition-all flex items-center justify-center gap-2"
+              className="flex-1 neo-shadow hover:neo-pressed rounded-xl px-4 py-3 font-medium text-foreground transition-all flex items-center justify-center gap-2"
             >
               <Icon name="RotateCcw" size={18} />
-              Сбросить всё
+              Сбросить
+            </button>
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="flex-1 neo-shadow hover:neo-pressed rounded-xl px-4 py-3 font-medium text-primary transition-all flex items-center justify-center gap-2 relative"
+            >
+              <Icon name="History" size={18} />
+              История
+              {history.length > 0 && (
+                <Badge className="absolute -top-2 -right-2 neo-shadow bg-primary text-primary-foreground border-0 h-6 w-6 flex items-center justify-center p-0">
+                  {history.length}
+                </Badge>
+              )}
             </button>
           </div>
         </div>
@@ -354,6 +418,88 @@ export default function Index() {
             )}
           </div>
         </div>
+
+        {showHistory && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setShowHistory(false)}>
+            <div className="neo-shadow rounded-3xl p-6 max-w-3xl w-full max-h-[80vh] overflow-hidden bg-background" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                  <Icon name="History" size={28} />
+                  История промптов
+                </h2>
+                <div className="flex gap-2">
+                  {history.length > 0 && (
+                    <button
+                      onClick={clearHistory}
+                      className="neo-shadow hover:neo-pressed rounded-xl px-4 py-2 text-sm font-medium text-red-500 transition-all flex items-center gap-2"
+                    >
+                      <Icon name="Trash2" size={16} />
+                      Очистить
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowHistory(false)}
+                    className="neo-shadow hover:neo-pressed rounded-xl p-2 transition-all"
+                  >
+                    <Icon name="X" size={20} />
+                  </button>
+                </div>
+              </div>
+
+              {history.length === 0 ? (
+                <div className="text-center py-16 neo-inset rounded-2xl">
+                  <Icon name="FileX" size={48} className="mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">История пуста</p>
+                </div>
+              ) : (
+                <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-2">
+                  {history.map((item) => (
+                    <div key={item.id} className="neo-shadow rounded-2xl p-4 hover:scale-[1.01] transition-all">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {item.templateName && (
+                            <Badge variant="secondary" className="neo-inset border-0 text-xs">
+                              {item.templateName}
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(item.timestamp).toLocaleString('ru-RU', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => copyToClipboard(item.prompt)}
+                            className="neo-shadow hover:neo-pressed rounded-lg p-2 text-primary transition-all"
+                          >
+                            <Icon name="Copy" size={16} />
+                          </button>
+                          <button
+                            onClick={() => loadFromHistory(item)}
+                            className="neo-shadow hover:neo-pressed rounded-lg p-2 text-primary transition-all"
+                          >
+                            <Icon name="RotateCcw" size={16} />
+                          </button>
+                          <button
+                            onClick={() => deleteHistoryItem(item.id)}
+                            className="neo-shadow hover:neo-pressed rounded-lg p-2 text-red-500 transition-all"
+                          >
+                            <Icon name="Trash2" size={16} />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-foreground line-clamp-3">{item.prompt}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
