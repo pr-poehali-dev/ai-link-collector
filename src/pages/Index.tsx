@@ -1,477 +1,359 @@
 import { useState } from 'react';
+import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 
-interface AIService {
+interface PromptTemplate {
   id: string;
   name: string;
+  category: 'creative' | 'business' | 'code' | 'analysis' | 'social';
   description: string;
-  category: 'text' | 'image' | 'video' | 'audio';
-  url: string;
+  template: string;
   icon: string;
+  variables: string[];
 }
 
-const aiServices: AIService[] = [
+const templates: PromptTemplate[] = [
   {
     id: '1',
-    name: 'ChatGPT',
-    description: 'Мощный ИИ для генерации текста и диалогов',
-    category: 'text',
-    url: 'https://chat.openai.com',
-    icon: 'MessageSquare'
+    name: 'Генерация контента',
+    category: 'creative',
+    description: 'Создание креативного текста на любую тему',
+    template: 'Напиши {length} текст на тему "{topic}" в стиле {style}. {additional}',
+    icon: 'PenTool',
+    variables: ['length', 'topic', 'style', 'additional']
   },
   {
     id: '2',
-    name: 'DALL-E',
-    description: 'Генерация изображений по текстовому описанию',
-    category: 'image',
-    url: 'https://openai.com/dall-e',
-    icon: 'Image'
+    name: 'Анализ текста',
+    category: 'analysis',
+    description: 'Глубокий анализ текста или документа',
+    template: 'Проанализируй следующий текст: "{text}". Обрати внимание на {focus}. {instruction}',
+    icon: 'Search',
+    variables: ['text', 'focus', 'instruction']
   },
   {
     id: '3',
-    name: 'Midjourney',
-    description: 'Создание художественных изображений',
-    category: 'image',
-    url: 'https://midjourney.com',
-    icon: 'Palette'
+    name: 'Написание кода',
+    category: 'code',
+    description: 'Генерация кода на любом языке',
+    template: 'Напиши код на {language} для {task}. Требования: {requirements}',
+    icon: 'Code',
+    variables: ['language', 'task', 'requirements']
   },
   {
     id: '4',
-    name: 'ElevenLabs',
-    description: 'Генерация реалистичной речи',
-    category: 'audio',
-    url: 'https://elevenlabs.io',
-    icon: 'Mic'
+    name: 'Бизнес-план',
+    category: 'business',
+    description: 'Создание бизнес-планов и стратегий',
+    template: 'Составь {type} для {business}. Целевая аудитория: {audience}. Бюджет: {budget}',
+    icon: 'Briefcase',
+    variables: ['type', 'business', 'audience', 'budget']
   },
   {
     id: '5',
-    name: 'Runway',
-    description: 'Создание и редактирование видео с ИИ',
-    category: 'video',
-    url: 'https://runwayml.com',
-    icon: 'Video'
+    name: 'Посты для соцсетей',
+    category: 'social',
+    description: 'Контент для социальных сетей',
+    template: 'Создай пост для {platform} про {topic}. Стиль: {tone}. Добавь {elements}',
+    icon: 'Share2',
+    variables: ['platform', 'topic', 'tone', 'elements']
   },
   {
     id: '6',
-    name: 'Claude',
-    description: 'ИИ-ассистент для сложных задач',
-    category: 'text',
-    url: 'https://claude.ai',
-    icon: 'Brain'
+    name: 'Email-рассылка',
+    category: 'business',
+    description: 'Письма для email-маркетинга',
+    template: 'Напиши email для {purpose}. Тема письма: {subject}. Целевое действие: {cta}',
+    icon: 'Mail',
+    variables: ['purpose', 'subject', 'cta']
   },
   {
     id: '7',
-    name: 'Stable Diffusion',
-    description: 'Open-source генератор изображений',
-    category: 'image',
-    url: 'https://stability.ai',
-    icon: 'Sparkles'
+    name: 'Идеи для контента',
+    category: 'creative',
+    description: 'Генерация идей и концепций',
+    template: 'Предложи {count} идей для {project}. Тематика: {theme}. {constraints}',
+    icon: 'Lightbulb',
+    variables: ['count', 'project', 'theme', 'constraints']
   },
   {
     id: '8',
-    name: 'Synthesia',
-    description: 'Создание AI-видео с аватарами',
-    category: 'video',
-    url: 'https://synthesia.io',
-    icon: 'PersonStanding'
+    name: 'Исправление ошибок',
+    category: 'code',
+    description: 'Отладка и исправление кода',
+    template: 'Найди и исправь ошибки в этом коде: {code}. Язык: {language}. {context}',
+    icon: 'Bug',
+    variables: ['code', 'language', 'context']
   },
   {
     id: '9',
-    name: 'Murf AI',
-    description: 'Превращение текста в озвучку',
-    category: 'audio',
-    url: 'https://murf.ai',
-    icon: 'Volume2'
+    name: 'Резюме документа',
+    category: 'analysis',
+    description: 'Краткое изложение длинных текстов',
+    template: 'Создай краткое резюме ({format}) для: {document}. Фокус на: {key_points}',
+    icon: 'FileText',
+    variables: ['format', 'document', 'key_points']
   },
   {
     id: '10',
-    name: 'Jasper',
-    description: 'ИИ для копирайтинга и контента',
-    category: 'text',
-    url: 'https://jasper.ai',
-    icon: 'FileText'
-  },
-  {
-    id: '11',
-    name: 'Pika',
-    description: 'Генерация видео из текста',
-    category: 'video',
-    url: 'https://pika.art',
-    icon: 'Film'
-  },
-  {
-    id: '12',
-    name: 'Suno',
-    description: 'Создание музыки с помощью ИИ',
-    category: 'audio',
-    url: 'https://suno.ai',
-    icon: 'Music'
-  },
-  {
-    id: '13',
-    name: 'Perplexity',
-    description: 'ИИ-поисковик с источниками',
-    category: 'text',
-    url: 'https://perplexity.ai',
-    icon: 'Search'
-  },
-  {
-    id: '14',
-    name: 'Gemini',
-    description: 'ИИ от Google для текста и анализа',
-    category: 'text',
-    url: 'https://gemini.google.com',
-    icon: 'Sparkle'
-  },
-  {
-    id: '15',
-    name: 'Leonardo AI',
-    description: 'Генерация игровых ассетов и арта',
-    category: 'image',
-    url: 'https://leonardo.ai',
-    icon: 'Gamepad2'
-  },
-  {
-    id: '16',
-    name: 'Firefly',
-    description: 'ИИ от Adobe для дизайна',
-    category: 'image',
-    url: 'https://firefly.adobe.com',
-    icon: 'Flame'
-  },
-  {
-    id: '17',
-    name: 'Ideogram',
-    description: 'Генерация изображений с текстом',
-    category: 'image',
-    url: 'https://ideogram.ai',
-    icon: 'Type'
-  },
-  {
-    id: '18',
-    name: 'Flux',
-    description: 'Быстрая генерация качественных изображений',
-    category: 'image',
-    url: 'https://flux.ai',
-    icon: 'Zap'
-  },
-  {
-    id: '19',
-    name: 'Krea AI',
-    description: 'Генерация и улучшение изображений',
-    category: 'image',
-    url: 'https://krea.ai',
-    icon: 'Wand2'
-  },
-  {
-    id: '20',
-    name: 'Replicate',
-    description: 'Платформа для запуска AI-моделей',
-    category: 'image',
-    url: 'https://replicate.com',
-    icon: 'Copy'
-  },
-  {
-    id: '21',
-    name: 'HeyGen',
-    description: 'Создание AI-видео с говорящими аватарами',
-    category: 'video',
-    url: 'https://heygen.com',
-    icon: 'UserCircle'
-  },
-  {
-    id: '22',
-    name: 'CapCut',
-    description: 'Редактор видео с AI-функциями',
-    category: 'video',
-    url: 'https://capcut.com',
-    icon: 'Scissors'
-  },
-  {
-    id: '23',
-    name: 'Descript',
-    description: 'Редактирование видео через текст',
-    category: 'video',
-    url: 'https://descript.com',
-    icon: 'FileVideo'
-  },
-  {
-    id: '24',
-    name: 'Luma AI',
-    description: '3D-захват и генерация видео',
-    category: 'video',
-    url: 'https://lumalabs.ai',
-    icon: 'Box'
-  },
-  {
-    id: '25',
-    name: 'Udio',
-    description: 'Создание музыки и песен с ИИ',
-    category: 'audio',
-    url: 'https://udio.com',
-    icon: 'Radio'
-  },
-  {
-    id: '26',
-    name: 'Soundraw',
-    description: 'Генерация фоновой музыки',
-    category: 'audio',
-    url: 'https://soundraw.io',
-    icon: 'AudioWaveform'
-  },
-  {
-    id: '27',
-    name: 'Speechify',
-    description: 'Озвучка текста естественным голосом',
-    category: 'audio',
-    url: 'https://speechify.com',
-    icon: 'Speaker'
-  },
-  {
-    id: '28',
-    name: 'Play.ht',
-    description: 'Реалистичная озвучка текста',
-    category: 'audio',
-    url: 'https://play.ht',
-    icon: 'PlayCircle'
-  },
-  {
-    id: '29',
-    name: 'Copy.ai',
-    description: 'Генерация маркетингового контента',
-    category: 'text',
-    url: 'https://copy.ai',
-    icon: 'PenTool'
-  },
-  {
-    id: '30',
-    name: 'Writesonic',
-    description: 'ИИ-копирайтер для бизнеса',
-    category: 'text',
-    url: 'https://writesonic.com',
-    icon: 'Edit3'
-  },
-  {
-    id: '31',
-    name: 'Notion AI',
-    description: 'ИИ-помощник в заметках',
-    category: 'text',
-    url: 'https://notion.so/product/ai',
-    icon: 'NotebookPen'
-  },
-  {
-    id: '32',
-    name: 'Grammarly',
-    description: 'Проверка и улучшение текста',
-    category: 'text',
-    url: 'https://grammarly.com',
-    icon: 'CheckCircle'
-  },
-  {
-    id: '33',
-    name: 'Anthropic',
-    description: 'Безопасный ИИ для исследований',
-    category: 'text',
-    url: 'https://anthropic.com',
-    icon: 'Shield'
-  },
-  {
-    id: '34',
-    name: 'Character.AI',
-    description: 'Общение с AI-персонажами',
-    category: 'text',
-    url: 'https://character.ai',
-    icon: 'Users'
-  },
-  {
-    id: '35',
-    name: 'Pi AI',
-    description: 'Персональный ИИ-компаньон',
-    category: 'text',
-    url: 'https://pi.ai',
-    icon: 'MessageCircle'
-  },
-  {
-    id: '36',
-    name: 'Hugging Face',
-    description: 'Платформа с AI-моделями',
-    category: 'text',
-    url: 'https://huggingface.co',
-    icon: 'Database'
+    name: 'SEO-оптимизация',
+    category: 'business',
+    description: 'Тексты с учетом SEO',
+    template: 'Напиши SEO-оптимизированный текст про {topic}. Ключевые слова: {keywords}. Длина: {length}',
+    icon: 'TrendingUp',
+    variables: ['topic', 'keywords', 'length']
   }
 ];
 
 const categories = [
   { id: 'all', name: 'Все', icon: 'LayoutGrid' },
-  { id: 'text', name: 'Текст', icon: 'FileText' },
-  { id: 'image', name: 'Изображения', icon: 'Image' },
-  { id: 'video', name: 'Видео', icon: 'Video' },
-  { id: 'audio', name: 'Аудио', icon: 'Headphones' }
+  { id: 'creative', name: 'Креатив', icon: 'Sparkles' },
+  { id: 'business', name: 'Бизнес', icon: 'Briefcase' },
+  { id: 'code', name: 'Код', icon: 'Code' },
+  { id: 'analysis', name: 'Анализ', icon: 'BarChart' },
+  { id: 'social', name: 'Соцсети', icon: 'MessageCircle' }
+];
+
+const toneOptions = [
+  { value: 'professional', label: 'Профессиональный' },
+  { value: 'casual', label: 'Неформальный' },
+  { value: 'friendly', label: 'Дружелюбный' },
+  { value: 'humorous', label: 'С юмором' },
+  { value: 'serious', label: 'Серьёзный' }
 ];
 
 export default function Index() {
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    const saved = localStorage.getItem('aiServicesFavorites');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null);
+  const [variables, setVariables] = useState<Record<string, string>>({});
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [tone, setTone] = useState('professional');
+  const [language, setLanguage] = useState('русский');
+  const [finalPrompt, setFinalPrompt] = useState('');
 
-  const toggleFavorite = (id: string) => {
-    const newFavorites = favorites.includes(id)
-      ? favorites.filter(fav => fav !== id)
-      : [...favorites, id];
-    setFavorites(newFavorites);
-    localStorage.setItem('aiServicesFavorites', JSON.stringify(newFavorites));
+  const filteredTemplates = templates.filter(
+    template => selectedCategory === 'all' || template.category === selectedCategory
+  );
+
+  const handleTemplateSelect = (template: PromptTemplate) => {
+    setSelectedTemplate(template);
+    const newVars: Record<string, string> = {};
+    template.variables.forEach(v => {
+      newVars[v] = '';
+    });
+    setVariables(newVars);
+    setFinalPrompt('');
   };
 
-  const filteredServices = aiServices.filter(service => {
-    const matchesCategory = selectedCategory === 'all' || service.category === selectedCategory;
-    const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          service.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const handleVariableChange = (varName: string, value: string) => {
+    setVariables(prev => ({ ...prev, [varName]: value }));
+  };
+
+  const generatePrompt = () => {
+    if (selectedTemplate) {
+      let result = selectedTemplate.template;
+      Object.entries(variables).forEach(([key, value]) => {
+        result = result.replace(`{${key}}`, value || `[${key}]`);
+      });
+      
+      const prefix = `Ты - Grok, AI-ассистент. Тон: ${toneOptions.find(t => t.value === tone)?.label}. Язык ответа: ${language}.\n\n`;
+      setFinalPrompt(prefix + result);
+    } else if (customPrompt) {
+      const prefix = `Ты - Grok, AI-ассистент. Тон: ${toneOptions.find(t => t.value === tone)?.label}. Язык ответа: ${language}.\n\n`;
+      setFinalPrompt(prefix + customPrompt);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(finalPrompt);
+  };
+
+  const clearAll = () => {
+    setSelectedTemplate(null);
+    setVariables({});
+    setCustomPrompt('');
+    setFinalPrompt('');
+  };
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-12 text-center">
-          <div className="inline-block neo-shadow rounded-3xl px-8 py-6 mb-6">
+        <header className="mb-10 text-center">
+          <div className="inline-block neo-shadow rounded-3xl px-8 py-6 mb-4">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2">
-              AI Каталог 🤖
+              Конструктор промптов для Grok 🤖
             </h1>
             <p className="text-muted-foreground text-lg">
-              Бесплатные AI-сервисы в одном месте
+              Создавай идеальные промпты за минуту
             </p>
           </div>
         </header>
 
-        <div className="mb-8 neo-shadow rounded-2xl p-4">
-          <div className="relative">
-            <Icon name="Search" className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+        <div className="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="neo-shadow rounded-2xl p-4">
+            <label className="text-sm font-medium text-foreground mb-2 block">Тон общения</label>
+            <select
+              value={tone}
+              onChange={(e) => setTone(e.target.value)}
+              className="w-full neo-inset border-0 bg-transparent text-foreground px-4 py-3 rounded-xl focus:outline-none"
+            >
+              {toneOptions.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="neo-shadow rounded-2xl p-4">
+            <label className="text-sm font-medium text-foreground mb-2 block">Язык ответа</label>
             <Input
-              type="text"
-              placeholder="Поиск AI-сервисов..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 neo-inset border-0 bg-transparent text-lg h-14 rounded-xl focus-visible:ring-0"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              placeholder="Например: русский"
+              className="neo-inset border-0 bg-transparent"
             />
+          </div>
+
+          <div className="neo-shadow rounded-2xl p-4 flex items-end">
+            <button
+              onClick={clearAll}
+              className="w-full neo-shadow hover:neo-pressed rounded-xl px-4 py-3 font-medium text-foreground transition-all flex items-center justify-center gap-2"
+            >
+              <Icon name="RotateCcw" size={18} />
+              Сбросить всё
+            </button>
           </div>
         </div>
 
-        <div className="mb-10">
+        <div className="mb-8">
           <div className="flex flex-wrap gap-3 justify-center">
             {categories.map(category => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
                 className={`
-                  px-6 py-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2
+                  px-5 py-2.5 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2
                   ${selectedCategory === category.id
                     ? 'neo-pressed bg-primary/10 text-primary'
                     : 'neo-shadow hover:neo-inset text-foreground'
                   }
                 `}
               >
-                <Icon name={category.icon} size={18} />
+                <Icon name={category.icon} size={16} />
                 {category.name}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredServices.map(service => (
-            <div
-              key={service.id}
-              className="neo-shadow rounded-3xl p-6 hover:scale-[1.02] transition-transform duration-200"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="neo-shadow rounded-2xl p-4 bg-gradient-to-br from-primary/20 to-accent/20">
-                  <Icon name={service.icon} size={28} className="text-primary" />
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div>
+            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <Icon name="Layers" size={24} />
+              Шаблоны промптов
+            </h2>
+            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+              {filteredTemplates.map(template => (
                 <button
-                  onClick={() => toggleFavorite(service.id)}
-                  className="neo-shadow rounded-xl p-2 hover:neo-pressed transition-all"
+                  key={template.id}
+                  onClick={() => handleTemplateSelect(template)}
+                  className={`
+                    w-full text-left neo-shadow rounded-2xl p-4 transition-all duration-200 hover:scale-[1.02]
+                    ${selectedTemplate?.id === template.id ? 'neo-pressed bg-primary/5' : ''}
+                  `}
                 >
-                  <Icon 
-                    name={favorites.includes(service.id) ? 'Heart' : 'Heart'} 
-                    size={20}
-                    className={favorites.includes(service.id) ? 'text-red-500 fill-red-500' : 'text-muted-foreground'}
-                  />
+                  <div className="flex items-start gap-3">
+                    <div className="neo-shadow rounded-xl p-2 bg-gradient-to-br from-primary/20 to-accent/20 shrink-0">
+                      <Icon name={template.icon} size={20} className="text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground mb-1">{template.name}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{template.description}</p>
+                      <Badge variant="secondary" className="mt-2 neo-inset border-0 text-xs">
+                        {categories.find(c => c.id === template.category)?.name}
+                      </Badge>
+                    </div>
+                  </div>
                 </button>
-              </div>
+              ))}
+            </div>
+          </div>
 
-              <h3 className="text-xl font-semibold mb-2 text-foreground">
-                {service.name}
+          <div>
+            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <Icon name="Settings" size={24} />
+              Настройки промпта
+            </h2>
+            
+            {selectedTemplate && (
+              <div className="neo-shadow rounded-2xl p-6 mb-4">
+                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Icon name={selectedTemplate.icon} size={18} />
+                  {selectedTemplate.name}
+                </h3>
+                <div className="space-y-4">
+                  {selectedTemplate.variables.map(varName => (
+                    <div key={varName}>
+                      <label className="text-sm font-medium text-foreground mb-2 block capitalize">
+                        {varName.replace('_', ' ')}
+                      </label>
+                      <Input
+                        value={variables[varName] || ''}
+                        onChange={(e) => handleVariableChange(varName, e.target.value)}
+                        placeholder={`Введите ${varName}...`}
+                        className="neo-inset border-0 bg-transparent"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="neo-shadow rounded-2xl p-6 mb-4">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Icon name="Edit" size={18} />
+                Или создай свой промпт
               </h3>
-              <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                {service.description}
-              </p>
-
-              <div className="flex items-center justify-between">
-                <Badge 
-                  variant="secondary" 
-                  className="neo-inset border-0 text-xs font-medium px-3 py-1"
-                >
-                  {categories.find(c => c.id === service.category)?.name}
-                </Badge>
-                <a
-                  href={service.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="neo-shadow rounded-xl px-4 py-2 text-sm font-medium text-primary hover:neo-pressed transition-all flex items-center gap-1"
-                >
-                  Открыть
-                  <Icon name="ExternalLink" size={14} />
-                </a>
-              </div>
+              <Textarea
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                placeholder="Напиши здесь свой собственный промпт..."
+                className="neo-inset border-0 bg-transparent min-h-[120px] resize-none"
+              />
             </div>
-          ))}
-        </div>
 
-        {filteredServices.length === 0 && (
-          <div className="text-center py-16 neo-shadow rounded-3xl">
-            <Icon name="SearchX" size={48} className="mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">
-              Ничего не найдено
-            </h3>
-            <p className="text-muted-foreground">
-              Попробуйте изменить поисковый запрос или фильтр
-            </p>
-          </div>
-        )}
+            <button
+              onClick={generatePrompt}
+              disabled={!selectedTemplate && !customPrompt}
+              className="w-full neo-shadow hover:neo-pressed rounded-2xl px-6 py-4 font-bold text-lg text-primary transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+            >
+              <Icon name="Sparkles" size={22} />
+              Сгенерировать промпт
+            </button>
 
-        {favorites.length > 0 && selectedCategory === 'all' && !searchQuery && (
-          <div className="mt-16">
-            <div className="neo-shadow rounded-3xl p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <Icon name="Star" size={28} className="text-primary" />
-                <h2 className="text-2xl font-bold text-foreground">
-                  Избранное ({favorites.length})
-                </h2>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {aiServices.filter(s => favorites.includes(s.id)).map(service => (
-                  <a
-                    key={service.id}
-                    href={service.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="neo-shadow rounded-2xl p-4 hover:neo-pressed transition-all text-center group"
+            {finalPrompt && (
+              <div className="neo-shadow rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
+                    <Icon name="Check" size={18} className="text-green-500" />
+                    Готовый промпт
+                  </h3>
+                  <button
+                    onClick={copyToClipboard}
+                    className="neo-shadow hover:neo-pressed rounded-xl px-4 py-2 text-sm font-medium text-primary transition-all flex items-center gap-2"
                   >
-                    <Icon name={service.icon} size={24} className="mx-auto mb-2 text-primary" />
-                    <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                      {service.name}
-                    </p>
-                  </a>
-                ))}
+                    <Icon name="Copy" size={16} />
+                    Копировать
+                  </button>
+                </div>
+                <div className="neo-inset rounded-xl p-4 bg-gradient-to-br from-primary/5 to-accent/5">
+                  <pre className="text-sm text-foreground whitespace-pre-wrap font-mono">{finalPrompt}</pre>
+                </div>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
