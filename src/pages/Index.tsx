@@ -108,6 +108,198 @@ const aiServices: AIService[] = [
     category: 'audio',
     url: 'https://suno.ai',
     icon: 'Music'
+  },
+  {
+    id: '13',
+    name: 'Perplexity',
+    description: 'ИИ-поисковик с источниками',
+    category: 'text',
+    url: 'https://perplexity.ai',
+    icon: 'Search'
+  },
+  {
+    id: '14',
+    name: 'Gemini',
+    description: 'ИИ от Google для текста и анализа',
+    category: 'text',
+    url: 'https://gemini.google.com',
+    icon: 'Sparkle'
+  },
+  {
+    id: '15',
+    name: 'Leonardo AI',
+    description: 'Генерация игровых ассетов и арта',
+    category: 'image',
+    url: 'https://leonardo.ai',
+    icon: 'Gamepad2'
+  },
+  {
+    id: '16',
+    name: 'Firefly',
+    description: 'ИИ от Adobe для дизайна',
+    category: 'image',
+    url: 'https://firefly.adobe.com',
+    icon: 'Flame'
+  },
+  {
+    id: '17',
+    name: 'Ideogram',
+    description: 'Генерация изображений с текстом',
+    category: 'image',
+    url: 'https://ideogram.ai',
+    icon: 'Type'
+  },
+  {
+    id: '18',
+    name: 'Flux',
+    description: 'Быстрая генерация качественных изображений',
+    category: 'image',
+    url: 'https://flux.ai',
+    icon: 'Zap'
+  },
+  {
+    id: '19',
+    name: 'Krea AI',
+    description: 'Генерация и улучшение изображений',
+    category: 'image',
+    url: 'https://krea.ai',
+    icon: 'Wand2'
+  },
+  {
+    id: '20',
+    name: 'Replicate',
+    description: 'Платформа для запуска AI-моделей',
+    category: 'image',
+    url: 'https://replicate.com',
+    icon: 'Copy'
+  },
+  {
+    id: '21',
+    name: 'HeyGen',
+    description: 'Создание AI-видео с говорящими аватарами',
+    category: 'video',
+    url: 'https://heygen.com',
+    icon: 'UserCircle'
+  },
+  {
+    id: '22',
+    name: 'CapCut',
+    description: 'Редактор видео с AI-функциями',
+    category: 'video',
+    url: 'https://capcut.com',
+    icon: 'Scissors'
+  },
+  {
+    id: '23',
+    name: 'Descript',
+    description: 'Редактирование видео через текст',
+    category: 'video',
+    url: 'https://descript.com',
+    icon: 'FileVideo'
+  },
+  {
+    id: '24',
+    name: 'Luma AI',
+    description: '3D-захват и генерация видео',
+    category: 'video',
+    url: 'https://lumalabs.ai',
+    icon: 'Box'
+  },
+  {
+    id: '25',
+    name: 'Udio',
+    description: 'Создание музыки и песен с ИИ',
+    category: 'audio',
+    url: 'https://udio.com',
+    icon: 'Radio'
+  },
+  {
+    id: '26',
+    name: 'Soundraw',
+    description: 'Генерация фоновой музыки',
+    category: 'audio',
+    url: 'https://soundraw.io',
+    icon: 'AudioWaveform'
+  },
+  {
+    id: '27',
+    name: 'Speechify',
+    description: 'Озвучка текста естественным голосом',
+    category: 'audio',
+    url: 'https://speechify.com',
+    icon: 'Speaker'
+  },
+  {
+    id: '28',
+    name: 'Play.ht',
+    description: 'Реалистичная озвучка текста',
+    category: 'audio',
+    url: 'https://play.ht',
+    icon: 'PlayCircle'
+  },
+  {
+    id: '29',
+    name: 'Copy.ai',
+    description: 'Генерация маркетингового контента',
+    category: 'text',
+    url: 'https://copy.ai',
+    icon: 'PenTool'
+  },
+  {
+    id: '30',
+    name: 'Writesonic',
+    description: 'ИИ-копирайтер для бизнеса',
+    category: 'text',
+    url: 'https://writesonic.com',
+    icon: 'Edit3'
+  },
+  {
+    id: '31',
+    name: 'Notion AI',
+    description: 'ИИ-помощник в заметках',
+    category: 'text',
+    url: 'https://notion.so/product/ai',
+    icon: 'NotebookPen'
+  },
+  {
+    id: '32',
+    name: 'Grammarly',
+    description: 'Проверка и улучшение текста',
+    category: 'text',
+    url: 'https://grammarly.com',
+    icon: 'CheckCircle'
+  },
+  {
+    id: '33',
+    name: 'Anthropic',
+    description: 'Безопасный ИИ для исследований',
+    category: 'text',
+    url: 'https://anthropic.com',
+    icon: 'Shield'
+  },
+  {
+    id: '34',
+    name: 'Character.AI',
+    description: 'Общение с AI-персонажами',
+    category: 'text',
+    url: 'https://character.ai',
+    icon: 'Users'
+  },
+  {
+    id: '35',
+    name: 'Pi AI',
+    description: 'Персональный ИИ-компаньон',
+    category: 'text',
+    url: 'https://pi.ai',
+    icon: 'MessageCircle'
+  },
+  {
+    id: '36',
+    name: 'Hugging Face',
+    description: 'Платформа с AI-моделями',
+    category: 'text',
+    url: 'https://huggingface.co',
+    icon: 'Database'
   }
 ];
 
